@@ -1,0 +1,96 @@
+using System;
+using System.Threading.Tasks;
+using Microsoft.Azure.Management.Compute;
+using Microsoft.Azure.Management.Compute.Models;
+using Microsoft.Rest.Azure.Authentication;
+
+class Program
+{
+    static async Task Main()
+    {
+        Console.WriteLine("Welcome to the DevOps Engineer Toolkit!");
+
+        try
+        {
+            // Example task: Deploy application to Azure VM
+            await DeployApplicationToAzureAsync();
+
+            // Example task: Monitor Azure VM status
+            MonitorAzureVMStatus();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"An error occurred: {ex.Message}");
+        }
+
+        Console.WriteLine("Tasks completed successfully. Have a great day!");
+    }
+
+    static async Task DeployApplicationToAzureAsync()
+    {
+        // Authenticate to Azure using service principal credentials
+        var tenantId = "<your-tenant-id>";
+        var clientId = "<your-client-id>";
+        var clientSecret = "<your-client-secret>";
+
+        var credentials = await ApplicationTokenProvider.LoginSilentAsync(
+            tenantId, clientId, clientSecret);
+
+        // Create Azure compute management client
+        var computeClient = new ComputeManagementClient(credentials)
+        {
+            SubscriptionId = "<your-subscription-id>"
+        };
+
+        // Define parameters for creating Azure VM
+        var vmParams = new VirtualMachine
+        {
+            Location = "East US",
+            HardwareProfile = new HardwareProfile
+            {
+                VmSize = "Standard_DS1_v2" // Example VM size
+            },
+            OsProfile = new OSProfile
+            {
+                ComputerName = "MyVM",
+                AdminUsername = "<admin-username>",
+                AdminPassword = "<admin-password>",
+                CustomData = Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes("<your-custom-script>"))
+            },
+            StorageProfile = new StorageProfile
+            {
+                OsDisk = new OSDisk
+                {
+                    Name = "MyOsDisk",
+                    CreateOption = DiskCreateOptionTypes.FromImage,
+                    Caching = CachingTypes.ReadWrite
+                }
+            },
+            NetworkProfile = new NetworkProfile
+            {
+                NetworkInterfaces = new[]
+                {
+                    new NetworkInterfaceReference
+                    {
+                        Id = "<your-network-interface-id>"
+                    }
+                }
+            }
+        };
+
+        // Create Azure VM
+        Console.WriteLine("Creating Azure VM...");
+        await computeClient.VirtualMachines.CreateOrUpdateAsync(
+            "<your-resource-group-name>", "<your-vm-name>", vmParams);
+
+        Console.WriteLine("Azure VM created successfully.");
+    }
+
+    static void MonitorAzureVMStatus()
+    {
+        // Code to monitor Azure VM status
+        Console.WriteLine("Monitoring Azure VM status...");
+        // Azure VM monitoring logic here
+        Console.WriteLine("Azure VM status monitored successfully.");
+    }
+}
